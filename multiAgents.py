@@ -135,40 +135,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
     #get action for the pacman first
     #for each ghost, get action and move on to the next
 
-    
-    
-
-          
-    def minimax_agent(current_depth, agent_number, gameState):
-
+    def pac_agent(current_depth, agent_number, gameState):
         if gameState.isLose() or gameState.isWin():
             return self.evaluationFunction(gameState)
-        
-        
-
-        number_of_agent = gameState.getNumAgents()
-
-        if agent_number == number_of_agent:
-            agent_number = 0
-            current_depth +=1
-
         if current_depth == self.depth:
             return self.evaluationFunction(gameState)
-        legal_action = gameState.getLegalActions(agent_number)
-
-        if len(legal_action) == 0:
-            return self.evaluationFunction(gameState)
-        #print(agent_number)
-        if agent_number==0:
-            return pac_agent(current_depth,agent_number, gameState)
-        
-        else:
-            return ghost_agent(current_depth,agent_number, gameState)
-
-
-    def pac_agent(current_depth, agent_number, gameState):
-      
-    
         max_value = -float("inf")
         pac_agent_action_list = gameState.getLegalActions(agent_number)
         
@@ -180,7 +151,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         for action in pac_agent_action_list:
             #print("enter the loop")
             next_state = gameState.generateSuccessor(agent_number, action)
-            next_state_result = minimax_agent(current_depth, agent_number+1, next_state)
+            next_state_result = ghost_agent(current_depth, agent_number+1, next_state)
             #print("******************")
             #print(next_state_result)
             #print("*****************************")
@@ -200,26 +171,22 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 max_value_action_pair = [max_value,max_value_action]
             
         return max_value_action_pair
-        
-        
-
-    
-
-
-
-      
+             
     def ghost_agent(current_depth, agent_number, gameState):
+        if gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
         min_value = float("inf")
         ghost_action_list = gameState.getLegalActions(agent_number)
-
-        
 
         if len(ghost_action_list) == 0:
             return self.evaluationFunction(gameState)
 
         for action in ghost_action_list:
             next_state = gameState.generateSuccessor(agent_number, action)
-            next_state_result = minimax_agent(current_depth, agent_number+1, next_state)
+            if agent_number+1 == gameState.getNumAgents():
+                next_state_result = pac_agent(current_depth+1, 0, next_state)
+            else:
+                next_state_result = ghost_agent(current_depth, agent_number+1, next_state)
             
 
             if type(next_state_result) == list:
@@ -232,7 +199,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
                 min_value_action_pair = [min_value,min_value_action]
         return min_value_action_pair
 
-    function_start_from_root = minimax_agent(0, 0, gameState)
+    function_start_from_root = pac_agent(0, 0, gameState)
 
     action = function_start_from_root[1]
     #print(function_start_from_root)
@@ -249,7 +216,85 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
       Returns the minimax action using self.depth and self.evaluationFunction
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def pac_agent(current_depth, agent_number, gameState, alpha, beta):
+        if gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+        if current_depth == self.depth:
+            return self.evaluationFunction(gameState)
+        max_value = -float("inf")
+        pac_agent_action_list = gameState.getLegalActions(agent_number)
+        
+        if len(pac_agent_action_list) == 0:
+            return self.evaluationFunction(gameState)
+    
+        #print("here")
+        #print(pac_agent_action_list)
+        for action in pac_agent_action_list:
+            #print("enter the loop")
+            next_state = gameState.generateSuccessor(agent_number, action)
+            next_state_result = ghost_agent(current_depth, agent_number+1, next_state, alpha, beta)
+            #print("******************")
+            #print(next_state_result)
+            #print("*****************************")
+            
+            
+            if type(next_state_result) == list:
+                temp_result = next_state_result[0]
+            else:
+                temp_result = next_state_result
+            
+            if temp_result > beta:
+                return [temp_result,action]
+            if temp_result > max_value:
+                
+                max_value = temp_result
+            
+                max_value_action = action
+                max_value_action_pair = [max_value,max_value_action]
+            
+
+            alpha = max(alpha, temp_result)
+        return max_value_action_pair
+             
+    def ghost_agent(current_depth, agent_number, gameState, alpha, beta):
+        if gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+        min_value = float("inf")
+        ghost_action_list = gameState.getLegalActions(agent_number)
+
+        if len(ghost_action_list) == 0:
+            return self.evaluationFunction(gameState)
+
+        for action in ghost_action_list:
+            next_state = gameState.generateSuccessor(agent_number, action)
+            if agent_number+1 == gameState.getNumAgents():
+                next_state_result = pac_agent(current_depth+1, 0, next_state, alpha, beta)
+            else:
+                next_state_result = ghost_agent(current_depth, agent_number+1, next_state, alpha, beta)
+            
+
+            if type(next_state_result) == list:
+                temp_result = next_state_result[0]
+            else:
+                temp_result = next_state_result
+
+            if temp_result < alpha:
+                return [temp_result,action]
+            if temp_result < min_value:
+                min_value = temp_result
+                min_value_action = action
+                min_value_action_pair = [min_value,min_value_action]
+            
+            beta = min(beta, temp_result)
+        return min_value_action_pair
+
+
+
+    function_start_from_root = pac_agent(0, 0, gameState, -float("inf"), float("inf"))
+
+    action = function_start_from_root[1]
+    #print(function_start_from_root)
+    return action
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
   """
@@ -264,7 +309,81 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
       legal moves.
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    def pac_agent(current_depth, agent_number, gameState):
+        if gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+        if current_depth == self.depth:
+            return self.evaluationFunction(gameState)
+        max_value = -float("inf")
+        pac_agent_action_list = gameState.getLegalActions(agent_number)
+        
+        if len(pac_agent_action_list) == 0:
+            return self.evaluationFunction(gameState)
+    
+        #print("here")
+        #print(pac_agent_action_list)
+        for action in pac_agent_action_list:
+            #print("enter the loop")
+            next_state = gameState.generateSuccessor(agent_number, action)
+            next_state_result = ghost_agent(current_depth, agent_number+1, next_state)
+            #print("******************")
+            #print(next_state_result)
+            #print("*****************************")
+            
+            
+            if type(next_state_result) == list:
+                temp_result = next_state_result[0]
+            else:
+                temp_result = next_state_result
+            
+            
+            if temp_result > max_value:
+                
+                max_value = temp_result
+            
+                max_value_action = action
+                max_value_action_pair = [max_value,max_value_action]
+            
+        return max_value_action_pair
+             
+    def ghost_agent(current_depth, agent_number, gameState):
+        init_max_prob = 0
+        if gameState.isLose() or gameState.isWin():
+            return self.evaluationFunction(gameState)
+        
+        ghost_action_list = gameState.getLegalActions(agent_number)
+
+        if len(ghost_action_list) == 0:
+            return self.evaluationFunction(gameState)
+
+        each_action_prob = 1.0/len(ghost_action_list)
+        for action in ghost_action_list:
+            next_state = gameState.generateSuccessor(agent_number, action)
+            if agent_number+1 == gameState.getNumAgents():
+                next_state_result = pac_agent(current_depth+1, 0, next_state)
+            else:
+                next_state_result = ghost_agent(current_depth, agent_number+1, next_state)
+            
+
+            if type(next_state_result) == list:
+                temp_result = next_state_result[0]
+            else:
+                temp_result = next_state_result
+            #temp_result = float(temp_result)
+            init_max_prob += temp_result*each_action_prob
+            action_prob_pair = [init_max_prob,action]
+        return action_prob_pair
+            
+            
+        
+
+
+
+    function_start_from_root = pac_agent(0, 0, gameState)
+
+    action = function_start_from_root[1]
+    #print(function_start_from_root)
+    return action
 
 def betterEvaluationFunction(currentGameState):
   """
